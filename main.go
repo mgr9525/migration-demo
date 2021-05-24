@@ -3,19 +3,20 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
+	"github.com/adelowo/migration-demo/deps"
+	"github.com/golang-migrate/migrate/v4/database/mysql"
+	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
 
-	var migrationDir = flag.String("migration.files", "./migrations", "Directory where the migration files are located ?")
+	//var migrationDir = flag.String("migration.files", "./migrations", "Directory where the migration files are located ?")
 	var mysqlDSN = flag.String("mysql.dsn", os.Getenv("MYSQL_DSN"), "Mysql DSN")
 
 	flag.Parse()
@@ -35,8 +36,13 @@ func main() {
 		log.Fatalf("could not start sql migration... %v", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s", *migrationDir), // file://path/to/directory
+	s := bindata.Resource(deps.AssetNames(), deps.Asset)
+	sc, err := bindata.WithInstance(s)
+	if err != nil {
+		log.Fatalf("could not bindata... %v", err)
+	}
+	m, err := migrate.NewWithInstance(
+		"bindata", sc,
 		"mysql", driver)
 
 	if err != nil {
